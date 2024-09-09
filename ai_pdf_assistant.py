@@ -1,6 +1,5 @@
 # Part 1: Library Imports and Setting up the Device
 # -------------------------------------------------
-# Import necessary libraries.
 import torch
 import os
 from langchain import PromptTemplate
@@ -21,33 +20,28 @@ DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
 
 # Part 2: Loading and Inspecting the PDFs
 # ----------------------------------------
-# Load PDF files from the specified directory and count the total number of pages.
 loader = PyPDFDirectoryLoader("unzipped_files/aircraft_pdfs")
 docs = loader.load()
 print(f"Total pages across all documents: {len(docs)}")
 
 # Part 3: Setting up Embeddings
 # -----------------------------
-# Initialize embeddings using a pre-trained model to represent the text data.
 embeddings = HuggingFaceInstructEmbeddings(
     model_name="thenlper/gte-small", model_kwargs={"device": DEVICE}
 )
 
 # Part 4: Text Splitting
 # -----------------------
-# Split the loaded documents into smaller chunks to be used for further processing.
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1024, chunk_overlap=64)
 texts = text_splitter.split_documents(docs)
 print(f"Number of text chunks: {len(texts)}")
 
 # Part 5: Creating an Embeddings Database
 # ---------------------------------------
-# Create an embeddings database using Chroma from the split text chunks.
 db = Chroma.from_documents(texts, embedding=embeddings, persist_directory="db")
 
 # Part 6: Setting up LLM (Language Learning Model)
 # ------------------------------------------------
-# Set up the environment variable for HuggingFace and initialize the desired model.
 
 my_credentials = {
 "url"    : "https://us-south.ml.cloud.ibm.com"
@@ -70,7 +64,6 @@ llm_hub = WatsonxLLM(model=LLAMA2_model)
 
 # Part 7: Defining the Prompt Template
 # ------------------------------------
-# Define the template for the questions that'll be used with the LLM.
 template ="""
 <<<SYS>>
 You are a helpful, respectful, and honest assistant to build aircraft. So, it is important to be precise. The following are the context of knowledge to build aircraft. Based on the context information, answer the follow-up questions.
@@ -82,7 +75,6 @@ prompt = PromptTemplate(template=template, input_variables=["context", "question
 
 # Part 8: Constructing the Question-Answer API Chain
 # --------------------------------------------------
-# Build the QA chain, which utilizes the LLM and retriever for answering questions.
 api_chain = RetrievalQA.from_chain_type(
     llm=llm_hub,
     chain_type="stuff",
@@ -93,7 +85,6 @@ api_chain = RetrievalQA.from_chain_type(
 
 # Part 9.5: Implementing the Chat Interface
 # -------------------------------------------
-# Define the response generation function using your AI assistant
 def ai_response(message, history):
     output = api_chain(message, history)  # Ensure api_chain is the correct function to use here
     source_documents = output["source_documents"][0].metadata
